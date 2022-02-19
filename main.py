@@ -148,7 +148,7 @@ def algorithm(csv_row: str, context: dict[str, Any],):
                 context[buys]=[("xbt",x[0][1]+(capital-invested)*.05),("eth",x[1][1])]
             else: context[buys]=[("xbt",x[0][1]),("eth",x[1][1]+(capital-invested)*.05)]
             volume=((capital-invested)*.05)/value
-            response=yield Trade(BUY,coin.lower(),Decimal(volume))
+            response=yield Trade("BUY",coin.lower(),Decimal(volume))
             #buy
             # pass
         if current[0]=="down" and avgdata[0]>=.7:
@@ -156,10 +156,10 @@ def algorithm(csv_row: str, context: dict[str, Any],):
             if x!= None:
                 if coin.lower()=="xbt":
                     volume=(x[0][1]*.10)/value
-                    response=yield Trade(SELL,coin.lower(),Decimal(volume))
+                    response=yield Trade("SELL",coin.lower(),Decimal(volume))
                 else:
                     volume=(x[0][1]*.10)/value
-                    response=yield Trade(SELL,coin.lower(),Decimal(volume))
+                    response=yield Trade("SELL",coin.lower(),Decimal(volume))
             #sell
             # pass
 
