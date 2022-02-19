@@ -79,7 +79,7 @@ def generalpred(x):
     return (.999747701*(math.log(x)+11604.0562))
 if __name__ == '__main__':
     # example to stream data
-
+    prior=1300
     for count,row in enumerate(STREAM.iter_records()):
         if count==5:
             break
@@ -93,6 +93,7 @@ if __name__ == '__main__':
             if (float(split[1])<=(prior*2) and float(split[1])>(prior/2)):
                 if len(split[3])>=10:
                     print(row)
+                    prior=float(split[1])
     # print(datetime.datetime.fromtimestamp(1514765799))
 
 # Example Interaction
