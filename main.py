@@ -77,9 +77,13 @@ def algorithm(csv_row: str, context: dict[str, Any],):
 def generalpred(x):
     x-=1514764800
     return (.999747701*(math.log(x)+11604.0562))
+def percDiff(timestamp,value):
+    #input: timestamp:int, value:int
+    #return the percent difference between the actual value and our predicted value
+    #if actual value is lower then predicted value return negative value
 if __name__ == '__main__':
     # example to stream data
-    prior=1300
+    prior=13000
     for count,row in enumerate(STREAM.iter_records()):
         if count==5:
             break
