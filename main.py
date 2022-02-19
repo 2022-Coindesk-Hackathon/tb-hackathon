@@ -7,7 +7,8 @@ from s3_helper import CSVStream
 from typing import Any
 import datetime
 import math
-# from scipy.optimize import curve_fit
+import scipy
+from scipy.optimize import curve_fit
 load_dotenv()
 
 BUY = "buy"
@@ -47,7 +48,7 @@ STREAM = CSVStream(
     S3.meta.client,
     key=XBT_2018_KEY,
     bucket=BUCKET,
-    expression=QUERY,
+    expression=SELECT_ALL_QUERY,
 )
 
 @dataclass
@@ -56,7 +57,115 @@ class Trade:
     base: str
     volume: Decimal
 
+def percDiff(timestamp,value,coin):
+
+    #input: timestamp:int, value:int
+    #return the percent difference between the actual value and our predicted value
+    #if actual value is lower then predicted value return negative value
+    pred = generalpred(timestamp,coin)
+    intvalue=float(value)
+    pred_error=(abs(pred-intvalue)/((pred+intvalue)/2))*100
+    if intvalue<pred:
+        pred_error*=-1
+    # print(f"value:{value}  expeceted:{pred}")
+    return pred_error
+
+def generalpred(timestamp,coin):
+    #input: timestamp:int
+    #return: expected value: int
+    if coin.lower()=="eth":
+        inttimestamp=float(timestamp)
+        # print(datetime.datetime.fromtimestamp(inttimestamp))
+        inttimestamp-=1514764799
+        return (.999964067*(math.log(inttimestamp)+1038.9))   #function for predicting data in for a*log(x)+b=y
+    if coin.lower()=="xbt":
+        inttimestamp=float(timestamp)
+        # print(timestamp)
+        inttimestamp-=1514764799
+        return (.999747701*(math.log(inttimestamp)+11604.0562))
+
 def algorithm(csv_row: str, context: dict[str, Any],):
+    #values in dic[timestamp] -> (up/down,percvalue)
+    if "\n" in row:
+        response=yield None
+    split=row.split(",")
+    
+    if len(split)!=4:
+        response=yield None
+    time=float(split[3])
+    value=float(split[1])
+    if len(split[3])>=10:
+        coin=split[0][5:8]
+        if coin.lower()=="eth":
+            difference=percDiff(split[3],split[1],"eth")
+        elif coin.lower()=="xbt":
+            percDiff(split[3],split[1],"eth")
+        else:
+            yield None
+
+        i=0
+        while context.get(str(time-i))==None or time-i>1514764799:
+            i-=1
+        if abs(context.get(str(time-i))[1])>=abs(difference):
+            #closer to log
+            if difference>0:
+                #price is going down and closer to log
+                context[str(time)]=("down",difference)
+            else:
+                context[str(time)]=("up",difference)
+                #price is going up and closer to log
+
+        else:
+            #further from log
+            if difference>0:
+                #price is going up and further from log
+                context[str(time)]=("up",difference)
+            else:
+                #price is going down and further from log
+                context[str(time)]=("down",difference)
+        
+        past=[0,0,0]
+        #up down None
+        depth=50000
+        for i in range(depth):
+            data=context.get(str(time-i))
+            if data==None:
+                past[2]+=1
+            if data[0]==up:
+                past[0]+=1
+            if data[1]==down:
+                past[1]+=1
+        avgdata=[]
+        avgdata.append(past[0]/depth)
+        avgdata.append(past[1]/depth)
+        avgdata.append(past[2]/depth)
+        current=context.get(str(time))
+        if current[0]=="up" and avgdata[1]>=.7:
+            x=context.get(buys)
+            invested=x[0][1]+x[1][1]
+            capital=1000000
+            if coin.lower()=="xbt":
+                context[buys]=[("xbt",x[0][1]+(capital-invested)*.05),("eth",x[1][1])]
+            else: context[buys]=[("xbt",x[0][1]),("eth",x[1][1]+(capital-invested)*.05)]
+            volume=((capital-invested)*.05)/value
+            response=yield Trade(BUY,coin.lower(),Decimal(volume))
+            #buy
+            # pass
+        if current[0]=="down" and avgdata[0]>=.7:
+            x=context.get(buys)
+            if x!= None:
+                if coin.lower()=="xbt":
+                    volume=(x[0][1]*.10)/value
+                    response=yield Trade(SELL,coin.lower(),Decimal(volume))
+                else:
+                    volume=(x[0][1]*.10)/value
+                    response=yield Trade(SELL,coin.lower(),Decimal(volume))
+            #sell
+            # pass
+
+        #   (1) okfq-xbt-usd,14682.26,2,1514765115
+    else:     
+        response = yield None
     """ Trading Algorithm
 
     Add your logic to this function. This function will simulate a streaming
@@ -76,44 +185,34 @@ def algorithm(csv_row: str, context: dict[str, Any],):
     """
     # algorithm logic...
 
-    response = yield None # example: Trade(BUY, 'xbt', Decimal(1))
+     # example: Trade(BUY, 'xbt', Decimal(1))
 
     # algorithm clean-up/error handling...
-def generalpred(timestamp):
-    #input: timestamp:int
-    #return: expected value: int
-    timestamp=float(timestamp)
-    timestamp-=1514764800
-    return (.999747701*(math.log(timestamp)+11604.0562))
 
-def percDiff(timestamp,value):
-    #input: timestamp:int, value:int
-    #return the percent difference between the actual value and our predicted value
-    #if actual value is lower then predicted value return negative value
-    pred = generalpred(timestamp)
-    pred_error = (value-pred)*100/value
-    return pred_error
 
+
+def func(a,x,b):
+    return (a*(math.log(x)))+b
 
 if __name__ == '__main__':
-    # example to stream data
-    prior=13000
     for count,row in enumerate(STREAM.iter_records()):
-        if count==5: 
-            break
-        if "\n" in row:
-            continue
-        split=row.split(",")
-        if len(split)!=4:
-            continue
+        print(algorithm(row,{}))
 
-        if split[0][5:8]=="xbt":
-            if (float(split[1])<=(prior*2) and float(split[1])>(prior/2)):
-                if len(split[3])>=10:
-                    print(row)
-                    print(percDiff(split[3],split[1]))
-                    prior=float(split[1])
-        
+    #     if "\n" in row:
+    #         continue
+    #     split=row.split(",")
+    #     if len(split)!=4:
+    #         continue
+
+    #     if split[0][5:8]=="eth":
+    #         if (float(split[1])<=(prior*2) and float(split[1])>(prior/2)):
+    #             if len(split[3])>=10:
+    #                 xdata.append(float(split[3])-1514764800)
+    #                 ydata.append(float(split[1]))
+
+    # x,y=scipy.optimize.curve_fit(func,xdata,ydata)
+    # print(x)
+
     # print(datetime.datetime.fromtimestamp(1514765799))
 
 # Example Interaction
