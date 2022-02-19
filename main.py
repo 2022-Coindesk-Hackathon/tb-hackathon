@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 from os import getenv
 from s3_helper import CSVStream
 from typing import Any
-
+import datetime
+import math
+from scipy.optimize import curve_fit
 load_dotenv()
 
 BUY = "buy"
@@ -72,11 +74,43 @@ def algorithm(csv_row: str, context: dict[str, Any],):
     response = yield None # example: Trade(BUY, 'xbt', Decimal(1))
 
     # algorithm clean-up/error handling...
-
+def func(a,x,b):
+    return (a*(math.log(x)))+b
+def generalpred(x):
+    newx=x-1514764799
+    return ((.999747701*(math.log(newx)+11604.0562)),datetime.datetime.fromtimestamp(x))
 if __name__ == '__main__':
     # example to stream data
-    for row in STREAM.iter_records():
-        print(row)
+    xdata=[]
+    ydata=[]
+    prior=13880
+    # for count,row in enumerate(STREAM.iter_records()):
+    #     if count==100000000:
+    #         print(row)
+    #         break
+    #     if "\n" in row:
+    #         continue
+    #     split=row.split(",")
+    #     if len(split)!=4:
+    #         continue
+    #     print(prior)
+    #     const=1514764800
+    #     if split[0][5:8]=="xbt":
+    #         if (float(split[1])<=(prior*2) and float(split[1])>(prior/2)):
+    #             if len(split[3])>=10:
+    #                 prior=float(split[1])
+    #                 ydata.append(float(split[1]))
+    #                 xdata.append(float(split[3])-const)
+    print(generalpred(1523756252.184))
+        # if count==1000000:
+            # print(xdata)
+            # print(ydata)
+            # break
+    # popt, pcov = curve_fit(func,xdata,ydata)
+    # print(popt)
+    # print(pcov)
+    
+    # print(datetime.datetime.fromtimestamp(1514765799))
 
 # Example Interaction
 #
