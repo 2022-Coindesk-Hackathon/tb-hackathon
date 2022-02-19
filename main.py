@@ -7,7 +7,7 @@ from s3_helper import CSVStream
 from typing import Any
 import datetime
 import math
-from scipy.optimize import curve_fit
+# from scipy.optimize import curve_fit
 load_dotenv()
 
 BUY = "buy"
