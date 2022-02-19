@@ -36,13 +36,18 @@ SELECT_ALL_QUERY = 'SELECT * FROM S3Object'
 #     WHERE CAST(s._4 AS DECIMAL) >= 1514764800
 #       AND CAST(s._4 AS DECIMAL) < 1514764802
 # '''
-
+QUERY = '''\
+    SELECT *
+    FROM S3Object s
+    WHERE CAST(s._4 AS DECIMAL) >= 1514764800
+      AND CAST(s._4 AS DECIMAL) < 1514764820
+'''
 STREAM = CSVStream(
     'select',
     S3.meta.client,
     key=XBT_2018_KEY,
     bucket=BUCKET,
-    expression=SELECT_ALL_QUERY,
+    expression=QUERY,
 )
 
 @dataclass
@@ -74,30 +79,32 @@ def algorithm(csv_row: str, context: dict[str, Any],):
     response = yield None # example: Trade(BUY, 'xbt', Decimal(1))
 
     # algorithm clean-up/error handling...
-def generalpred(x):
+def generalpred(timestamp):
+    #input: timestamp:int
+    #return: expected value: int
     x-=1514764800
-    return (.999747701*(math.log(x)+11604.0562))
+    return (.999747701*(math.log(timestamp)+11604.0562))
 def percDiff(timestamp,value):
     #input: timestamp:int, value:int
     #return the percent difference between the actual value and our predicted value
     #if actual value is lower then predicted value return negative value
+    pass
 if __name__ == '__main__':
     # example to stream data
-    prior=13000
+    # prior=13000
     for count,row in enumerate(STREAM.iter_records()):
-        if count==5:
-            break
+        print(row)
         if "\n" in row:
             continue
         split=row.split(",")
         if len(split)!=4:
             continue
-
-        if split[0][5:8]=="xbt":
-            if (float(split[1])<=(prior*2) and float(split[1])>(prior/2)):
-                if len(split[3])>=10:
-                    print(row)
-                    prior=float(split[1])
+        if split[3]>
+        # if split[0][5:8]=="xbt":
+        #     if (float(split[1])<=(prior*2) and float(split[1])>(prior/2)):
+        #         if len(split[3])>=10:
+                    
+        #             prior=float(split[1])
     # print(datetime.datetime.fromtimestamp(1514765799))
 
 # Example Interaction
