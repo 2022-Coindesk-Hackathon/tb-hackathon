@@ -87,9 +87,9 @@ def generalpred(timestamp,coin):
 
 def algorithm(csv_row: str, context: dict[str, Any],):
     #values in dic[timestamp] -> (up/down,percvalue)
-    if "\n" in row:
+    if "\n" in csv_row:
         response=yield None
-    split=row.split(",")
+    split=csv_row.split(",")
     
     if len(split)!=4:
         response=yield None
