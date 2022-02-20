@@ -127,7 +127,7 @@ def algorithm(csv_row: str, context: dict[str, Any],):
         
         past=[0,0,0]
         #up down None
-        depth=5000000
+        depth=100000
         for i in range(depth):
             data=context.get(str(time-i))
             if data==None:
