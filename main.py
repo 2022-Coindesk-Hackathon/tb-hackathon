@@ -7,8 +7,8 @@ from s3_helper import CSVStream
 from typing import Any
 import datetime
 import math
-import scipy
-from scipy.optimize import curve_fit
+# import scipy
+# from scipy.optimize import curve_fit
 load_dotenv()
 
 BUY = "buy"
@@ -56,6 +56,7 @@ class Trade:
     trade_type: str # BUY | SELL
     base: str
     volume: Decimal
+
 
 def percDiff(timestamp,value,coin):
 
@@ -126,7 +127,7 @@ def algorithm(csv_row: str, context: dict[str, Any],):
         
         past=[0,0,0]
         #up down None
-        depth=50000
+        depth=5000000
         for i in range(depth):
             data=context.get(str(time-i))
             if data==None:
